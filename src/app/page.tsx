@@ -197,7 +197,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen text-slate-50 relative overflow-hidden flex">
+    <div className="min-h-screen text-slate-50 relative overflow-x-hidden flex pb-24 lg:pb-0">
       <div className="bg-glow-effect"></div>
       
       <aside className="fixed left-0 top-0 h-full w-64 border-r border-white/5 bg-white/5 backdrop-blur-3xl hidden lg:flex flex-col p-6 z-40">
@@ -216,24 +216,24 @@ export default function Dashboard() {
         </nav>
       </aside>
 
-      <main className="lg:pl-64 flex-1 min-h-screen relative z-10">
-        <header className="h-24 border-b border-white/5 flex items-center justify-between px-10 sticky top-0 bg-black/20 backdrop-blur-2xl z-30">
-          <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-white/50">
-              {activeTab === 'dashboard' ? 'Resumen Mensual' : 'Estadísticas e Historial'}
+      <main className="lg:pl-64 flex-1 min-h-screen relative z-10 overflow-x-hidden">
+        <header className="h-24 border-b border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 sm:px-10 sticky top-0 bg-black/40 backdrop-blur-2xl z-30 pt-4 sm:pt-0 gap-4 sm:gap-0">
+          <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-white/50">
+              {activeTab === 'dashboard' ? 'Resumen' : 'Estadísticas'}
             </h1>
             {activeTab === 'dashboard' && (
-              <div className="flex items-center gap-2 bg-white/5 rounded-xl p-1 border border-white/10 shadow-inner ml-4">
-                <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-white/10 rounded-lg transition-all"><ChevronLeft size={16} /></button>
-                <span className="text-sm font-bold w-36 text-center capitalize tracking-wide">{formatMonth(currentMonth)}</span>
-                <button onClick={() => changeMonth(1)} className="p-2 hover:bg-white/10 rounded-lg transition-all"><ChevronRight size={16} /></button>
+              <div className="flex items-center gap-1 sm:gap-2 bg-white/5 rounded-xl p-1 border border-white/10 shadow-inner">
+                <button onClick={() => changeMonth(-1)} className="p-1.5 sm:p-2 hover:bg-white/10 rounded-lg transition-all"><ChevronLeft size={16} /></button>
+                <span className="text-xs sm:text-sm font-bold w-24 sm:w-36 text-center capitalize tracking-wide">{formatMonth(currentMonth)}</span>
+                <button onClick={() => changeMonth(1)} className="p-1.5 sm:p-2 hover:bg-white/10 rounded-lg transition-all"><ChevronRight size={16} /></button>
               </div>
             )}
           </div>
         </header>
 
         {activeTab === 'dashboard' ? (
-          <div className="p-10 max-w-[1400px] mx-auto">
+          <div className="p-6 sm:p-10 max-w-[1400px] mx-auto">
           {/* Summary Cards */}
           <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-12">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-7 rounded-[32px]">
@@ -274,15 +274,15 @@ export default function Dashboard() {
 
           {/* Action Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4 mt-8">
-            <h2 className="text-2xl font-bold tracking-tight">Gastos Detallados</h2>
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <button onClick={() => setShowLiquidateModal(true)} className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-5 py-3 rounded-2xl text-sm font-bold transition-all shadow-lg shadow-purple-500/20 w-full sm:w-auto">
+            <h2 className="text-2xl font-bold tracking-tight self-start sm:self-auto">Gastos Detallados</h2>
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+              <button onClick={() => setShowLiquidateModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-5 py-3 rounded-2xl text-sm font-bold transition-all shadow-lg shadow-purple-500/20">
                 <Receipt size={18} /> Calcular Expensas
               </button>
-              <button onClick={() => setShowCalcModal(true)} className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white px-5 py-3 rounded-2xl text-sm font-bold transition-all shadow-lg shadow-orange-500/20 w-full sm:w-auto">
+              <button onClick={() => setShowCalcModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white px-5 py-3 rounded-2xl text-sm font-bold transition-all shadow-lg shadow-orange-500/20">
                 <TrendingUp size={18} /> Proyectar Aumento
               </button>
-              <button onClick={() => setShowAddModal(true)} className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/10 text-white px-5 py-3 rounded-2xl text-sm font-bold transition-all backdrop-blur-md w-full sm:w-auto">
+              <button onClick={() => setShowAddModal(true)} className="hidden sm:flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/10 text-white px-5 py-3 rounded-2xl text-sm font-bold transition-all backdrop-blur-md">
                 <Plus size={18} /> Gasto Manual
               </button>
             </div>
@@ -315,16 +315,16 @@ export default function Dashboard() {
                             )}
                           </div>
                         </div>
-                        <p className="text-sm text-slate-400 font-medium">{expense.recipient} {expense.aliasCbu && <span className="font-mono text-xs ml-1 opacity-70">({expense.aliasCbu})</span>}</p>
+                        <p className="text-xs sm:text-sm text-slate-400 font-medium">{expense.recipient} {expense.aliasCbu && <span className="font-mono text-[10px] sm:text-xs ml-1 opacity-70">({expense.aliasCbu})</span>}</p>
                       </div>
-                      <div className="flex flex-col items-end gap-2 ml-4 border-l border-white/5 pl-6">
+                      <div className="flex flex-col items-end gap-2 ml-2 sm:ml-4 border-l border-white/5 pl-4 sm:pl-6">
                         <span className={`text-[10px] uppercase tracking-widest font-black px-3 py-1 rounded-full border ${expense.status === 'paid' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(248,113,113,0.1)]'}`}>
                           {expense.status === 'paid' ? 'Pagado' : 'Pendiente'}
                         </span>
                         {expense.status === 'pending' ? (
-                          <div className="flex items-center gap-2 mt-1">
-                            <button onClick={() => deleteExpense(expense.id)} className="text-slate-500 hover:text-red-400 p-2 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={18} /></button>
-                            <button onClick={() => setSelectedPayment(expense)} className="text-sm font-bold bg-gradient-to-r from-blue-600 to-[#009EE3] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 hover:shadow-lg hover:shadow-[#009EE3]/30 transition-all hover:scale-105">
+                          <div className="flex items-center gap-1 sm:gap-2 mt-1">
+                            <button onClick={() => deleteExpense(expense.id)} className="text-slate-500 hover:text-red-400 p-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={18} /></button>
+                            <button onClick={() => setSelectedPayment(expense)} className="text-xs sm:text-sm font-bold bg-gradient-to-r from-blue-600 to-[#009EE3] text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl flex items-center gap-1 sm:gap-2 hover:shadow-lg hover:shadow-[#009EE3]/30 transition-all hover:scale-105">
                               Pagar <ArrowUpRight size={16} />
                             </button>
                           </div>
@@ -355,6 +355,23 @@ export default function Dashboard() {
           <HistoryView allExpenses={allExpenses} />
         )}
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#0B0E14]/90 backdrop-blur-2xl border-t border-white/10 px-6 py-3 flex justify-between items-center z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+        <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center gap-1 ${activeTab === 'dashboard' ? 'text-white' : 'text-slate-500'}`}>
+          <LayoutDashboard size={24} className={activeTab === 'dashboard' ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]' : ''} />
+          <span className="text-[10px] font-bold">Panel</span>
+        </button>
+        
+        <button onClick={() => setShowAddModal(true)} className="bg-gradient-to-br from-purple-500 to-blue-500 p-4 rounded-2xl shadow-lg shadow-purple-500/30 transform -translate-y-6 ring-4 ring-[#0B0E14]">
+          <Plus size={24} className="text-white" />
+        </button>
+        
+        <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center gap-1 ${activeTab === 'history' ? 'text-white' : 'text-slate-500'}`}>
+          <History size={24} className={activeTab === 'history' ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]' : ''} />
+          <span className="text-[10px] font-bold">Historial</span>
+        </button>
+      </nav>
 
       {/* Add Expense Modal */}
       <AnimatePresence>
