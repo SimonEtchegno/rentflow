@@ -313,48 +313,48 @@ export default function Dashboard() {
               ) : (
                 <AnimatePresence>
                   {expenses.map((expense) => (
-                    <motion.div key={expense.id} layout initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9 }} 
-                      className={`glass-card p-6 rounded-3xl flex items-center gap-4 group ${expense.status === 'paid' ? 'border-emerald-500/30 bg-emerald-500/5' : ''}`}
-                    >
-                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-white/5 border border-white/10 group-hover:scale-110 transition-transform duration-300">
-                        {expense.name.toLowerCase().includes('luz') || expense.name.toLowerCase().includes('gas') || expense.name.toLowerCase().includes('internet') ? <Home size={20} className="text-blue-400" /> : expense.name.toLowerCase().includes('expensas') ? <Building2 size={20} className="text-purple-400" /> : <Wallet size={20} className="text-emerald-400" />}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-bold text-white text-lg">{expense.name}</h4>
-                          <div className="flex items-center gap-3">
-                            <span className="text-lg font-black text-white tracking-tight">${expense.amount.toLocaleString()}</span>
-                            {expense.status === 'pending' && (
-                              <button onClick={() => setExpenseToEdit(expense)} className="text-slate-500 hover:text-white transition-colors p-1.5 bg-white/5 rounded-lg opacity-0 group-hover:opacity-100"><Pencil size={14} /></button>
-                            )}
-                          </div>
+                    <motion.div key={expense.id} layout initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9 }} className="group bg-white/5 border border-white/10 hover:bg-white/10 p-4 sm:p-5 rounded-[24px] flex flex-col sm:flex-row sm:items-center justify-between transition-all relative overflow-hidden backdrop-blur-xl gap-3 sm:gap-0">
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+                        <div className="bg-slate-800/50 p-3 sm:p-4 rounded-2xl border border-slate-700/50 shrink-0">
+                          <Wallet size={20} className="text-slate-400" />
                         </div>
-                        <p className="text-xs sm:text-sm text-slate-400 font-medium">{expense.recipient} {expense.aliasCbu && <span className="font-mono text-[10px] sm:text-xs ml-1 opacity-70">({expense.aliasCbu})</span>}</p>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
+                            <h3 className="font-bold text-sm sm:text-base">{expense.name}</h3>
+                            <span className="font-black text-lg sm:text-xl text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">${expense.amount.toLocaleString('es-AR')}</span>
+                          </div>
+                          <p className="text-xs sm:text-sm text-slate-400 font-medium leading-tight">
+                            {expense.recipient} {expense.aliasCbu && <span className="font-mono text-[10px] sm:text-xs ml-1 opacity-70">({expense.aliasCbu})</span>}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2 ml-2 sm:ml-4 border-l border-white/5 pl-4 sm:pl-6">
-                        <span className={`text-[10px] uppercase tracking-widest font-black px-3 py-1 rounded-full border ${expense.status === 'paid' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(248,113,113,0.1)]'}`}>
+                      <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-end gap-2 border-t sm:border-t-0 sm:border-l border-white/5 pt-3 sm:pt-0 sm:pl-6 w-full sm:w-auto sm:ml-4 mt-1 sm:mt-0">
+                        <span className={`text-[10px] uppercase tracking-widest font-black px-3 py-1 rounded-full border shrink-0 ${expense.status === 'paid' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(248,113,113,0.1)]'}`}>
                           {expense.status === 'paid' ? 'Pagado' : 'Pendiente'}
                         </span>
                         {expense.status === 'pending' ? (
-                          <div className="flex items-center gap-1 sm:gap-2 mt-1">
+                          <div className="flex items-center gap-1 sm:gap-2">
                             <button onClick={() => deleteExpense(expense.id)} className="text-slate-500 hover:text-red-400 p-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={18} /></button>
                             <button onClick={() => setSelectedPayment(expense)} className="text-xs sm:text-sm font-bold bg-gradient-to-r from-blue-600 to-[#009EE3] text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl flex items-center gap-1 sm:gap-2 hover:shadow-lg hover:shadow-[#009EE3]/30 transition-all hover:scale-105">
                               Pagar <ArrowUpRight size={16} />
                             </button>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2 mt-2">
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            <button onClick={() => deleteExpense(expense.id)} className="text-slate-500 hover:text-red-400 p-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={18} /></button>
                             {expense.receiptUrl ? (
-                              <button onClick={() => window.open(expense.receiptUrl, '_blank')} className="text-xs font-bold bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-emerald-500/20 transition-colors border border-emerald-500/20">
-                                <FileText size={14} /> Ver Comprobante
+                              <button onClick={() => window.open(expense.receiptUrl, '_blank')} className="text-xs font-bold bg-emerald-500/10 text-emerald-400 px-2 sm:px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-emerald-500/20 transition-colors border border-emerald-500/20">
+                                <FileText size={14} /> <span className="hidden sm:inline">Ver</span>
                               </button>
                             ) : (
-                              <label className="text-xs font-bold bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-slate-700 transition-colors cursor-pointer border border-slate-700">
-                                <FileUp size={14} /> Subir MP
+                              <label className="text-xs font-bold bg-slate-800 text-slate-300 px-2 sm:px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-slate-700 transition-colors cursor-pointer border border-slate-700">
+                                <FileUp size={14} /> <span className="hidden sm:inline">Subir</span>
                                 <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => handleFileUpload(e, expense.id)} />
                               </label>
                             )}
-                            <CheckCircle2 size={18} className="text-emerald-500" />
+                            <button className="text-xs sm:text-sm font-bold bg-white/5 text-slate-500 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl flex items-center gap-1 sm:gap-2 cursor-not-allowed">
+                              Pagado <CheckCircle2 size={16} />
+                            </button>
                           </div>
                         )}
                       </div>
