@@ -652,7 +652,7 @@ function HistoryView({ allExpenses }: { allExpenses: Expense[] }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                 <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val/1000}k`} />
-                <RechartsTooltip cursor={{ fill: '#1e293b' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px' }} itemStyle={{ color: '#fff', fontWeight: 'bold' }} formatter={(value: number) => [`$${value.toLocaleString()}`, 'Total']} />
+                <RechartsTooltip cursor={{ fill: '#1e293b' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px' }} itemStyle={{ color: '#fff', fontWeight: 'bold' }} formatter={(value: any) => [`$${value.toLocaleString()}`, 'Total']} />
                 <Bar dataKey="Total" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -673,7 +673,7 @@ function HistoryView({ allExpenses }: { allExpenses: Expense[] }) {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px' }} itemStyle={{ color: '#fff', fontWeight: 'bold' }} formatter={(value: number) => [`$${value.toLocaleString()}`, 'Total']} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px' }} itemStyle={{ color: '#fff', fontWeight: 'bold' }} formatter={(value: any) => [`$${value.toLocaleString()}`, 'Total']} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -701,12 +701,17 @@ function IncreaseCalculatorModal({ expenses, onClose }: { expenses: Expense[], o
   const currentRent = rentExp ? rentExp.amount : 0;
   
   const [baseRent, setBaseRent] = useState(currentRent.toString());
-  const [inflationRate, setInflationRate] = useState('120'); // 120% example
+  const [indexType, setIndexType] = useState('ICL');
+  const [indexStart, setIndexStart] = useState('');
+  const [indexEnd, setIndexEnd] = useState('');
 
   const parsedRent = parseFloat(baseRent || '0');
-  const parsedRate = parseFloat(inflationRate || '0');
+  const parsedStart = parseFloat(indexStart || '1'); // Evitar division por 0
+  const parsedEnd = parseFloat(indexEnd || '1');
   
-  const newRent = parsedRent * (1 + (parsedRate / 100));
+  // Fórmula Ley de Alquileres: Alquiler * (Indice Fin / Indice Inicio)
+  const multiplier = (parsedStart > 0 && parsedEnd > 0) ? (parsedEnd / parsedStart) : 1;
+  const newRent = parsedRent * multiplier;
   const increaseAmount = newRent - parsedRent;
   const newRoommateShare = newRent / 2;
 
@@ -722,7 +727,7 @@ function IncreaseCalculatorModal({ expenses, onClose }: { expenses: Expense[], o
         </div>
         
         <div className="space-y-4">
-          <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 space-y-3">
+          <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 space-y-4">
             <div>
               <label className="block text-sm text-slate-400 mb-1">Alquiler Actual ($)</label>
               <div className="relative">
@@ -730,11 +735,25 @@ function IncreaseCalculatorModal({ expenses, onClose }: { expenses: Expense[], o
                 <input type="number" value={baseRent} onChange={e => setBaseRent(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-4 py-2 text-white outline-none no-spinners" />
               </div>
             </div>
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">Índice ICL/IPC Esperado (%)</label>
-              <div className="relative">
-                <span className="absolute right-3 top-2.5 text-slate-400">%</span>
-                <input type="number" value={inflationRate} onChange={e => setInflationRate(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white outline-none no-spinners text-orange-400 font-bold" />
+
+            <div className="pt-2 border-t border-slate-700/50">
+              <label className="block text-xs font-bold text-orange-400 mb-2 uppercase tracking-wider">Cálculo por Ley de Alquileres</label>
+              <div className="flex gap-2 mb-3">
+                <button onClick={() => setIndexType('ICL')} className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all border ${indexType === 'ICL' ? 'bg-orange-500/20 border-orange-500/50 text-orange-400' : 'bg-slate-900 border-slate-700 text-slate-500'}`}>ICL (BCRA)</button>
+                <button onClick={() => setIndexType('IPC')} className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all border ${indexType === 'IPC' ? 'bg-orange-500/20 border-orange-500/50 text-orange-400' : 'bg-slate-900 border-slate-700 text-slate-500'}`}>IPC (Indec)</button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Índice Inicial (Firma)</label>
+                  <input type="number" value={indexStart} onChange={e => setIndexStart(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none no-spinners text-sm" placeholder="Ej: 3.54" />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Índice Actual (Hoy)</label>
+                  <input type="number" value={indexEnd} onChange={e => setIndexEnd(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none no-spinners text-sm font-bold text-orange-400" placeholder="Ej: 12.80" />
+                </div>
+              </div>
+              <div className="mt-2 text-right">
+                <a href="https://bcra.gob.ar/PublicacionesEstadisticas/Principales_variables.asp" target="_blank" rel="noreferrer" className="text-[10px] text-blue-400 hover:underline">Ver valores oficiales en BCRA ↗</a>
               </div>
             </div>
           </div>
