@@ -62,6 +62,14 @@ export default function Dashboard() {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'history'>('dashboard');
   const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    const auth = localStorage.getItem('rentflow_auth');
+    if (auth === 'true') setIsAuthenticated(true);
+    setAuthChecked(true);
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'history') {
@@ -195,6 +203,12 @@ export default function Dashboard() {
     const date = new Date(parseInt(y), parseInt(m) - 1 + delta);
     setCurrentMonth(date.toISOString().slice(0, 7));
   };
+
+  if (!authChecked) return null; // Avoid hydration mismatch
+
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <div className="min-h-screen text-slate-50 relative overflow-x-hidden flex pb-24 lg:pb-0">
@@ -796,5 +810,53 @@ function IncreaseCalculatorModal({ expenses, onClose }: { expenses: Expense[], o
         </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+function LoginScreen({ onLogin }: { onLogin: () => void }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(false);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email.toLowerCase() === 'simonetchegno@gmail.com' && password === 'saimon15') {
+      localStorage.setItem('rentflow_auth', 'true');
+      onLogin();
+    } else {
+      setError(true);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#0B0E14] font-sans">
+      <div className="bg-glow-effect"></div>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-8 sm:p-10 rounded-[32px] w-full max-w-md z-10 mx-4 border border-white/10 shadow-2xl">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-500/20 ring-1 ring-white/10 mx-auto mb-4">
+            <Wallet className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70 tracking-tight">RentFlow</h1>
+          <p className="text-slate-400 mt-2 font-medium">Privacidad de Acceso</p>
+        </div>
+        
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div>
+            <label className="block text-sm font-bold text-slate-400 mb-2">Correo Electrónico</label>
+            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500/50 transition-colors" placeholder="tu@email.com" />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-slate-400 mb-2">Contraseña secreta</label>
+            <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500/50 transition-colors" placeholder="••••••••" />
+          </div>
+          
+          {error && <p className="text-red-400 text-sm font-bold text-center">Credenciales incorrectas.</p>}
+          
+          <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-purple-500/20 mt-4 flex justify-center items-center gap-2">
+            Iniciar Sesión Segura
+          </button>
+        </form>
+      </motion.div>
+    </div>
   );
 }
