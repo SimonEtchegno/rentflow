@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RentFlow - Panel de Gastos Personales 🇦🇷
 
-## Getting Started
+Una aplicación web completa, simple y funcional para gestionar y pagar tus gastos mensuales (alquiler, expensas, servicios) integrada con Mercado Pago.
 
-First, run the development server:
+## Características
 
+- 📊 **Panel Mensual:** Resumen de tus gastos filtrados por mes.
+- 🎨 **Estados visuales:** Verde para "Pagado", Rojo para "Pendiente".
+- 💳 **Pagos con Mercado Pago:** Integración con la API Checkout Pro de Mercado Pago.
+- ✏️ **Gestión:** Agrega, edita (monto en línea) y elimina gastos manualmente.
+- 🔄 **Duplicar:** Copia automáticamente los gastos del mes anterior al mes actual.
+- 💾 **Base de datos local:** Todo se guarda en un archivo `data.json` local (ideal para uso personal sin configuraciones complejas).
+
+## Instrucciones de instalación
+
+1. **Instalar dependencias:**
+   ```bash
+   npm install
+   ```
+
+2. **Configurar Mercado Pago:**
+   - Crea un archivo `.env` en la raíz del proyecto.
+   - Agrega tu Access Token de Mercado Pago:
+     ```env
+     MP_ACCESS_TOKEN=tu_access_token_de_prueba_o_produccion
+     NEXT_PUBLIC_APP_URL=http://localhost:3000
+     ```
+   - *Nota:* Si no configuras el token, la aplicación funcionará en "Modo Simulación" permitiéndote ver cómo sería el flujo visual del pago.
+
+3. **Ejecutar el proyecto:**
+   ```bash
+   npm run dev
+   ```
+
+4. Abrí [http://localhost:3000](http://localhost:3000) en tu navegador.
+
+## Webhooks (Avanzado)
+Para que Mercado Pago actualice automáticamente el estado a "Pagado" cuando completas el pago real, necesitas exponer tu puerto 3000 a internet (por ejemplo usando ngrok):
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+ngrok http 3000
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Y luego actualizar la variable `NEXT_PUBLIC_APP_URL` en tu `.env` con la URL de ngrok. La aplicación enviará a Mercado Pago la URL `${NEXT_PUBLIC_APP_URL}/api/webhook` para las notificaciones.
