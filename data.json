@@ -82,11 +82,12 @@
     "name": "Alquiler (Dueño)",
     "type": "Dueño Directo",
     "amount": 657666.52,
-    "status": "pending",
+    "status": "paid",
     "dueDate": "10 Mar, 2026",
     "recipient": "Roberto Juan Fornasier",
     "aliasCbu": "0000003100027697428144",
-    "month": "2026-04"
+    "month": "2026-04",
+    "receiptUrl": "/uploads/2026-04-auto-1-1777245075279-1777248547624.pdf"
   },
   {
     "id": "2026-04-auto-2-1777245075279",

@@ -820,7 +820,12 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.toLowerCase() === 'simonetchegno@gmail.com' && password === 'saimon15') {
+    const mail = email.toLowerCase();
+    
+    const isSimon = mail === 'simonetchegno@gmail.com' && password === 'saimon15';
+    const isAxel = mail === 'axelfercharra@gmail.com' && password === '1234';
+
+    if (isSimon || isAxel) {
       localStorage.setItem('rentflow_auth', 'true');
       onLogin();
     } else {
