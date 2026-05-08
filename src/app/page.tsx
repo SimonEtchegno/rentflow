@@ -96,10 +96,11 @@ export default function Dashboard() {
   const totalPending = expenses.filter(p => p.status === 'pending').reduce((acc, curr) => acc + curr.amount, 0);
   const totalPaid = expenses.filter(p => p.status === 'paid').reduce((acc, curr) => acc + curr.amount, 0);
   const totalMonth = totalPending + totalPaid;
-  const roommateShare = totalMonth / 2;
+  const roommateShare = totalPending / 2; // What's left to collect
+  const collectedAlready = totalPaid / 2; // What was already collected
 
   const sendWhatsApp = () => {
-    const text = `Che, ya cerré los números de ${formatMonth(currentMonth)}.\nEn total de alquiler, expensas y servicios gastamos $${totalMonth.toLocaleString()}.\n*Tu mitad (50%) es: $${roommateShare.toLocaleString()}*.\nCuando puedas pasame!`;
+    const text = `Che, ya cerré los números de ${formatMonth(currentMonth)}.\nEn total de alquiler, expensas y servicios gastamos $${totalMonth.toLocaleString()}.\n*Lo que ya pagué y tu mitad (50%) es: $${roommateShare.toLocaleString()}*.\nCuando puedas pasame!`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -156,13 +157,34 @@ export default function Dashboard() {
 
   const markAsPaid = async () => {
     if (selectedPayment) {
-      setExpenses(prev => prev.map(p => p.id === selectedPayment.id ? { ...p, status: 'paid' } : p));
+      const updatedPayment = { ...selectedPayment, status: 'paid' as const };
+      setExpenses(prev => prev.map(p => p.id === selectedPayment.id ? updatedPayment : p));
       await fetch('/api/expenses', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...selectedPayment, status: 'paid' })
+        body: JSON.stringify(updatedPayment)
       });
       setSelectedPayment(null);
+    }
+  };
+
+  const toggleStatus = async (expense: Expense) => {
+    const newStatus: PaymentStatus = expense.status === 'paid' ? 'pending' : 'paid';
+    const updatedExpense = { ...expense, status: newStatus };
+    
+    // Optimistic update
+    setExpenses(prev => prev.map(e => e.id === expense.id ? updatedExpense : e));
+    
+    try {
+      await fetch('/api/expenses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedExpense)
+      });
+    } catch (e) {
+      console.error('Failed to update status', e);
+      // Revert on error
+      setExpenses(prev => prev.map(e => e.id === expense.id ? expense : e));
     }
   };
 
@@ -261,27 +283,27 @@ export default function Dashboard() {
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-7 rounded-[32px] border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-transparent">
               <div className="absolute top-0 right-0 p-6 opacity-10 text-blue-400"><Users size={100} /></div>
-              <p className="text-blue-300 text-sm font-bold uppercase tracking-wider mb-2">A cobrar al Roomie</p>
+              <p className="text-blue-300 text-sm font-bold uppercase tracking-wider mb-2">Falta Cobrar</p>
               <h3 className="text-4xl font-black text-blue-400 tracking-tighter">${roommateShare.toLocaleString()}</h3>
               <button onClick={sendWhatsApp} className="mt-6 flex items-center justify-center gap-2 w-full bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 py-3 rounded-2xl text-sm font-bold transition-all border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
-                <MessageCircle size={16} /> Pedir Mitad por WhatsApp
+                <MessageCircle size={16} /> Pedir Resto por WhatsApp
               </button>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-7 rounded-[32px] border-red-500/20">
-              <p className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Falta Pagar</p>
-              <h3 className="text-4xl font-black text-red-400 tracking-tighter">${totalPending.toLocaleString()}</h3>
-              <div className="mt-4 flex items-center gap-2 text-xs text-red-400/80 font-bold bg-red-500/10 w-fit px-3 py-1.5 rounded-full border border-red-500/20">
-                <Clock size={14} /><span>{totalPending > 0 ? 'Pagos Pendientes' : 'Todo al día'}</span>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-7 rounded-[32px] border-orange-500/20">
+              <p className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Monto Total Pendiente</p>
+              <h3 className="text-4xl font-black text-orange-400 tracking-tighter">${totalPending.toLocaleString()}</h3>
+              <div className="mt-4 flex items-center gap-2 text-xs text-orange-400/80 font-bold bg-orange-500/10 w-fit px-3 py-1.5 rounded-full border border-orange-500/20">
+                <Clock size={14} /><span>{totalPending > 0 ? 'Gastos sin cubrir' : 'Todo al día'}</span>
               </div>
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-7 rounded-[32px] relative overflow-hidden bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-[0_20px_40px_-15px_rgba(16,185,129,0.5)]">
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
-              <p className="text-emerald-950/80 text-sm font-black uppercase tracking-wider mb-2 relative z-10">Ya Pagado</p>
-              <h3 className="text-4xl font-black text-white tracking-tighter relative z-10 drop-shadow-md">${totalPaid.toLocaleString()}</h3>
+              <p className="text-emerald-950/80 text-sm font-black uppercase tracking-wider mb-2 relative z-10">Ya Cobrado</p>
+              <h3 className="text-4xl font-black text-white tracking-tighter relative z-10 drop-shadow-md">${collectedAlready.toLocaleString()}</h3>
               <div className="mt-4 flex items-center gap-2 text-xs text-white font-bold bg-black/20 w-fit px-3 py-1.5 rounded-full backdrop-blur-md relative z-10 border border-white/10">
-                <CheckCircle2 size={14} /><span>Dinero Transferido</span>
+                <CheckCircle2 size={14} /><span>Recibido del Roomie</span>
               </div>
             </motion.div>
           </section>
@@ -329,34 +351,38 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-end gap-2 border-t sm:border-t-0 sm:border-l border-white/5 pt-3 sm:pt-0 sm:pl-6 w-full sm:w-auto sm:ml-4 mt-1 sm:mt-0">
-                        <span className={`text-[10px] uppercase tracking-widest font-black px-3 py-1 rounded-full border shrink-0 ${expense.status === 'paid' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(248,113,113,0.1)]'}`}>
+                        <button 
+                          onClick={() => toggleStatus(expense)}
+                          className={`text-[10px] uppercase tracking-widest font-black px-3 py-1 rounded-full border shrink-0 transition-all hover:scale-105 active:scale-95 ${expense.status === 'paid' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(248,113,113,0.1)]'}`}
+                        >
                           {expense.status === 'paid' ? 'Pagado' : 'Pendiente'}
-                        </span>
-                        {expense.status === 'pending' ? (
-                          <div className="flex items-center gap-1 sm:gap-2">
-                            <button onClick={() => deleteExpense(expense.id)} className="text-slate-500 hover:text-red-400 p-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={18} /></button>
-                            <button onClick={() => setSelectedPayment(expense)} className="text-xs sm:text-sm font-bold bg-gradient-to-r from-blue-600 to-[#009EE3] text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl flex items-center gap-1 sm:gap-2 hover:shadow-lg hover:shadow-[#009EE3]/30 transition-all hover:scale-105">
-                              Pagar <ArrowUpRight size={16} />
+                        </button>
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <button onClick={() => setExpenseToEdit(expense)} className="text-slate-500 hover:text-blue-400 p-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Pencil size={18} /></button>
+                          <button onClick={() => deleteExpense(expense.id)} className="text-slate-500 hover:text-red-400 p-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={18} /></button>
+                          
+                          {expense.status === 'pending' ? (
+                            <button onClick={() => setSelectedPayment(expense)} className="text-xs sm:text-sm font-bold bg-gradient-to-r from-blue-600 to-[#009EE3] text-white px-4 sm:px-5 py-2.5 rounded-xl flex items-center gap-2 hover:shadow-lg hover:shadow-[#009EE3]/30 transition-all hover:scale-105">
+                              Me pagó <Check size={16} />
                             </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1 sm:gap-2">
-                            <button onClick={() => deleteExpense(expense.id)} className="text-slate-500 hover:text-red-400 p-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={18} /></button>
-                            {expense.receiptUrl ? (
-                              <button onClick={() => window.open(expense.receiptUrl, '_blank')} className="text-xs font-bold bg-emerald-500/10 text-emerald-400 px-2 sm:px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-emerald-500/20 transition-colors border border-emerald-500/20">
-                                <FileText size={14} /> <span className="hidden sm:inline">Ver</span>
+                          ) : (
+                            <>
+                              {expense.receiptUrl ? (
+                                <button onClick={() => window.open(expense.receiptUrl, '_blank')} className="text-xs font-bold bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-emerald-500/20 transition-colors border border-emerald-500/20">
+                                  <FileText size={14} /> <span className="hidden sm:inline">Recibo</span>
+                                </button>
+                              ) : (
+                                <label className="text-xs font-bold bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-slate-700 transition-colors cursor-pointer border border-slate-700">
+                                  <FileUp size={14} /> <span className="hidden sm:inline">Subir</span>
+                                  <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => handleFileUpload(e, expense.id)} />
+                                </label>
+                              )}
+                              <button onClick={() => toggleStatus(expense)} className="text-xs sm:text-sm font-bold bg-white/5 text-slate-400 px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-white/10 transition-all">
+                                Cobrado <CheckCircle2 size={16} />
                               </button>
-                            ) : (
-                              <label className="text-xs font-bold bg-slate-800 text-slate-300 px-2 sm:px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-slate-700 transition-colors cursor-pointer border border-slate-700">
-                                <FileUp size={14} /> <span className="hidden sm:inline">Subir</span>
-                                <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => handleFileUpload(e, expense.id)} />
-                              </label>
-                            )}
-                            <button className="text-xs sm:text-sm font-bold bg-white/5 text-slate-500 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl flex items-center gap-1 sm:gap-2 cursor-not-allowed">
-                              Pagado <CheckCircle2 size={16} />
-                            </button>
-                          </div>
-                        )}
+                            </>
+                          )}
+                        </div>
                       </div>
                     </motion.div>
                   ))}
