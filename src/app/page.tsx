@@ -73,14 +73,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (activeTab === 'history') {
-      fetch('/api/expenses').then(res => res.json()).then(data => setAllExpenses(data));
+      fetch('/api/expenses', { cache: 'no-store' }).then(res => res.json()).then(data => setAllExpenses(data));
     }
   }, [activeTab]);
 
   const fetchExpenses = async (month: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/expenses?month=${month}`);
+      const res = await fetch(`/api/expenses?month=${month}`, { cache: 'no-store' });
       const data = await res.json();
       setExpenses(data);
     } catch (e) {
