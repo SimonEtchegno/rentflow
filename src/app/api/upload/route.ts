@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(arrayBuffer);
 
     // Create unique filename
-    const ext = path.extname(file.name) || '.pdf';
+    const ext = file.name ? path.extname(file.name) : '.pdf';
     const filename = `${expenseId}-${Date.now()}${ext}`;
     
     // Save to public/uploads
@@ -39,8 +39,8 @@ export async function POST(request: Request) {
     saveExpenses(updated);
 
     return NextResponse.json({ success: true, receiptUrl });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error uploading file:', error);
-    return NextResponse.json({ error: 'Error al subir el archivo' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Error desconocido al subir el archivo' }, { status: 500 });
   }
 }

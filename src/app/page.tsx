@@ -221,9 +221,9 @@ export default function Dashboard() {
       } else {
         alert('Error: ' + (data.error || 'No se pudo subir el archivo'));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Upload failed', err);
-      alert('Error de conexión al subir el comprobante');
+      alert('Error de conexión al subir el comprobante: ' + (err.message || 'Error desconocido'));
     }
     setUploadingId(null);
     e.target.value = ''; // Reset input to allow uploading same file again
