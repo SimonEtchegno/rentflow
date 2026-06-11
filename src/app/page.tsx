@@ -61,6 +61,7 @@ export default function Dashboard() {
   const [showCalcModal, setShowCalcModal] = useState(false);
   const [showSimpleCalc, setShowSimpleCalc] = useState(false);
   const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'history'>('dashboard');
   const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
@@ -203,7 +204,7 @@ export default function Dashboard() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsLoading(true);
+    setUploadingId(expenseId);
     const formData = new FormData();
     formData.append('file', file);
     formData.append('expenseId', expenseId);
@@ -217,12 +218,15 @@ export default function Dashboard() {
       
       if (data.receiptUrl) {
         setExpenses(prev => prev.map(p => p.id === expenseId ? { ...p, receiptUrl: data.receiptUrl } : p));
+      } else {
+        alert('Error: ' + (data.error || 'No se pudo subir el archivo'));
       }
     } catch (err) {
       console.error('Upload failed', err);
-      alert('Error al subir el comprobante');
+      alert('Error de conexión al subir el comprobante');
     }
-    setIsLoading(false);
+    setUploadingId(null);
+    e.target.value = ''; // Reset input to allow uploading same file again
   };
 
   const formatMonth = (monthStr: string) => {
@@ -392,6 +396,10 @@ export default function Dashboard() {
                                 <button onClick={() => window.open(expense.receiptUrl, '_blank')} className="text-xs font-bold bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-emerald-500/20 transition-colors border border-emerald-500/20">
                                   <FileText size={14} /> <span className="hidden sm:inline">Recibo</span>
                                 </button>
+                              ) : uploadingId === expense.id ? (
+                                <div className="text-xs font-bold bg-slate-800 text-slate-400 px-3 py-1.5 rounded-lg flex items-center gap-1 border border-slate-700 cursor-not-allowed">
+                                  <Loader2 size={14} className="animate-spin" /> <span className="hidden sm:inline">Subiendo...</span>
+                                </div>
                               ) : (
                                 <label className="text-xs font-bold bg-slate-800 text-slate-300 px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-slate-700 transition-colors cursor-pointer border border-slate-700">
                                   <FileUp size={14} /> <span className="hidden sm:inline">Subir</span>
