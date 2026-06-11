@@ -14,6 +14,7 @@ export interface Expense {
   aliasCbu: string; // New field for Alias/CBU
   month: string;
   receiptUrl?: string; // For MP receipts
+  notes?: string;
 }
 
 const DB_PATH = path.join(process.cwd(), 'data.json');

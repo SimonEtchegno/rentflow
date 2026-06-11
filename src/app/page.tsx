@@ -46,6 +46,7 @@ interface Expense {
   aliasCbu: string;
   month: string;
   receiptUrl?: string;
+  notes?: string;
 }
 
 export default function Dashboard() {
@@ -58,6 +59,7 @@ export default function Dashboard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showLiquidateModal, setShowLiquidateModal] = useState(false);
   const [showCalcModal, setShowCalcModal] = useState(false);
+  const [showSimpleCalc, setShowSimpleCalc] = useState(false);
   const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'history'>('dashboard');
@@ -120,17 +122,22 @@ export default function Dashboard() {
     const inmoExp = expenses.find(e => e.name.toLowerCase().includes('inmobiliaria'));
     const consorcioExp = expenses.find(e => e.name.toLowerCase().includes('expensas'));
 
-    const baseOwner = totalAlquiler - inmoFee;
-    const finalRent = baseOwner - ownerDeduction;
+    const baseOwner = (totalAlquiler || 0) - (inmoFee || 0);
+    const finalRent = baseOwner - (ownerDeduction || 0);
+    
+    let rentNotes = '';
+    if (ownerDeduction > 0) {
+      rentNotes = `Descuento expensas: -$${ownerDeduction.toLocaleString('es-AR')}`;
+    }
 
     if (rentExp) {
-      await saveEditedExpense({ ...rentExp, amount: finalRent });
+      await saveEditedExpense({ ...rentExp, amount: finalRent, notes: rentNotes });
     }
     if (inmoExp) {
-      await saveEditedExpense({ ...inmoExp, amount: inmoFee });
+      await saveEditedExpense({ ...inmoExp, amount: inmoFee || 0 });
     }
     if (consorcioExp) {
-      await saveEditedExpense({ ...consorcioExp, amount: expensasTotal });
+      await saveEditedExpense({ ...consorcioExp, amount: expensasTotal || 0 });
     }
     setShowLiquidateModal(false);
   };
@@ -318,6 +325,9 @@ export default function Dashboard() {
               <button onClick={() => setShowCalcModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white px-5 py-3 rounded-2xl text-sm font-bold transition-all shadow-lg shadow-orange-500/20">
                 <TrendingUp size={18} /> Proyectar Aumento
               </button>
+              <button onClick={() => setShowSimpleCalc(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-5 py-3 rounded-2xl text-sm font-bold transition-all shadow-lg">
+                Calculadora
+              </button>
               <button onClick={() => setShowAddModal(true)} className="hidden sm:flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/10 text-white px-5 py-3 rounded-2xl text-sm font-bold transition-all backdrop-blur-md">
                 <Plus size={18} /> Gasto Manual
               </button>
@@ -345,6 +355,7 @@ export default function Dashboard() {
                             <h3 className="font-bold text-sm sm:text-base">{expense.name}</h3>
                             <span className="font-black text-lg sm:text-xl text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">${expense.amount.toLocaleString('es-AR')}</span>
                           </div>
+                          {expense.notes && <p className="text-xs text-orange-400 mb-1 font-bold">{expense.notes}</p>}
                           <p className="text-xs sm:text-sm text-slate-400 font-medium leading-tight">
                             {expense.recipient} {expense.aliasCbu && <span className="font-mono text-[10px] sm:text-xs ml-1 opacity-70">({expense.aliasCbu})</span>}
                           </p>
@@ -459,6 +470,13 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
 
+      {/* Simple Calculator Modal */}
+      <AnimatePresence>
+        {showSimpleCalc && (
+          <SimpleCalculator onClose={() => setShowSimpleCalc(false)} />
+        )}
+      </AnimatePresence>
+
       {/* Payment Assistant Modal */}
       <AnimatePresence>
         {selectedPayment && (
@@ -497,6 +515,53 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function SimpleCalculator({ onClose }: { onClose: () => void }) {
+  const [display, setDisplay] = useState('0');
+  const [equation, setEquation] = useState('');
+
+  const handlePress = (val: string) => {
+    if (val === 'C') { setDisplay('0'); setEquation(''); return; }
+    if (val === '=') {
+      try {
+        const res = eval(equation + display);
+        setDisplay(res.toString());
+        setEquation('');
+      } catch (e) { setDisplay('Error'); }
+      return;
+    }
+    if (['+', '-', '*', '/'].includes(val)) {
+      setEquation(equation + display + val);
+      setDisplay('0');
+      return;
+    }
+    setDisplay(display === '0' ? val : display + val);
+  };
+
+  const buttons = ['7','8','9','/','4','5','6','*','1','2','3','-','C','0','=','+'];
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="glass bg-[#1e293b] rounded-[24px] w-full max-w-xs p-6 border border-slate-700">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Calculadora</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white"><X size={20} /></button>
+        </div>
+        <div className="bg-slate-900 rounded-xl p-4 mb-4 text-right overflow-hidden">
+          <div className="text-slate-400 text-xs h-4">{equation}</div>
+          <div className="text-3xl font-bold text-white break-all">{display}</div>
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          {buttons.map(b => (
+            <button key={b} onClick={() => handlePress(b)} className={`p-4 rounded-xl text-xl font-bold transition-colors ${['+','-','*','/','='].includes(b) ? 'bg-blue-500 hover:bg-blue-600 text-white' : b === 'C' ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}>
+              {b}
+            </button>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
