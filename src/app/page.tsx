@@ -101,6 +101,10 @@ export default function Dashboard() {
   const roommateShare = totalPending / 2; // What's left to collect
   const collectedAlready = totalPaid / 2; // What was already collected
 
+  const totalAlquilerBase = expenses
+    .filter(e => e.name.toLowerCase().includes('alquiler') || e.name.toLowerCase().includes('inmobiliaria'))
+    .reduce((acc, curr) => acc + curr.amount, 0);
+
   const sendWhatsApp = () => {
     const text = `Che, ya cerré los números de ${formatMonth(currentMonth)}.\nEn total de alquiler, expensas y servicios gastamos $${totalMonth.toLocaleString()}.\n*Lo que ya pagué y tu mitad (50%) es: $${roommateShare.toLocaleString()}*.\nCuando puedas pasame!`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
@@ -283,8 +287,14 @@ export default function Dashboard() {
               <div className="absolute top-0 right-0 p-6 opacity-10"><Wallet size={100} className="text-white" /></div>
               <p className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Total del Mes</p>
               <h3 className="text-4xl font-black text-white tracking-tighter">${totalMonth.toLocaleString()}</h3>
-              <div className="mt-4 flex items-center gap-2 text-xs text-slate-400 font-medium">
-                <span className="w-2 h-2 rounded-full bg-slate-500"></span> Presupuesto Estimado
+              <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs">
+                <div className="flex items-center gap-1.5 text-slate-400 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-slate-500"></span> Todos los gastos
+                </div>
+                <div className="flex items-center gap-1.5 text-slate-300 font-bold bg-white/5 w-fit px-2.5 py-1 rounded-md border border-white/10">
+                  <Home size={12} className="text-purple-400" />
+                  Alquiler e Inmo: <span className="text-white">${totalAlquilerBase.toLocaleString('es-AR')}</span>
+                </div>
               </div>
             </motion.div>
 
