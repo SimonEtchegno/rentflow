@@ -543,24 +543,34 @@ function SimpleCalculator({ onClose }: { onClose: () => void }) {
   const buttons = ['7','8','9','/','4','5','6','*','1','2','3','-','C','0','=','+'];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="glass bg-[#1e293b] rounded-[24px] w-full max-w-xs p-6 border border-slate-700">
-        <div className="flex justify-between items-center mb-4">
+    <motion.div 
+      initial={{ opacity: 0, y: 50, scale: 0.9 }} 
+      animate={{ opacity: 1, y: 0, scale: 1 }} 
+      exit={{ opacity: 0, y: 50, scale: 0.9 }} 
+      drag
+      dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }}
+      dragElastic={0.1}
+      dragMomentum={false}
+      className="fixed z-[100] bottom-6 right-6 lg:bottom-10 lg:right-10 glass bg-[#1e293b]/95 backdrop-blur-2xl rounded-[24px] w-full max-w-xs p-6 border border-slate-700 shadow-2xl cursor-grab active:cursor-grabbing"
+    >
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1 opacity-50"><span className="w-1 h-1 bg-white rounded-full"></span><span className="w-1 h-1 bg-white rounded-full"></span><span className="w-1 h-1 bg-white rounded-full"></span></div>
           <h2 className="text-xl font-bold">Calculadora</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white"><X size={20} /></button>
         </div>
-        <div className="bg-slate-900 rounded-xl p-4 mb-4 text-right overflow-hidden">
-          <div className="text-slate-400 text-xs h-4">{equation}</div>
-          <div className="text-3xl font-bold text-white break-all">{display}</div>
-        </div>
-        <div className="grid grid-cols-4 gap-2">
-          {buttons.map(b => (
-            <button key={b} onClick={() => handlePress(b)} className={`p-4 rounded-xl text-xl font-bold transition-colors ${['+','-','*','/','='].includes(b) ? 'bg-blue-500 hover:bg-blue-600 text-white' : b === 'C' ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}>
-              {b}
-            </button>
-          ))}
-        </div>
-      </motion.div>
+        <button onClick={onClose} className="text-slate-400 hover:text-white"><X size={20} /></button>
+      </div>
+      <div className="bg-slate-900 rounded-xl p-4 mb-4 text-right overflow-hidden cursor-auto">
+        <div className="text-slate-400 text-xs h-4">{equation}</div>
+        <div className="text-3xl font-bold text-white break-all">{display}</div>
+      </div>
+      <div className="grid grid-cols-4 gap-2 cursor-auto">
+        {buttons.map(b => (
+          <button key={b} onClick={() => handlePress(b)} className={`p-4 rounded-xl text-xl font-bold transition-colors ${['+','-','*','/','='].includes(b) ? 'bg-blue-500 hover:bg-blue-600 text-white' : b === 'C' ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}>
+            {b}
+          </button>
+        ))}
+      </div>
     </motion.div>
   );
 }
