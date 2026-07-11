@@ -74,27 +74,69 @@ export default function Dashboard() {
     setAuthChecked(true);
   }, []);
 
+  // Migrar o cargar gastos de LocalStorage
   useEffect(() => {
-    if (activeTab === 'history') {
-      fetch('/api/expenses', { cache: 'no-store' }).then(res => res.json()).then(data => setAllExpenses(data));
-    }
-  }, [activeTab]);
+    if (!authChecked || !isAuthenticated) return;
 
-  const fetchExpenses = async (month: string) => {
+    const localData = localStorage.getItem('rentflow_expenses');
+    if (localData) {
+      try {
+        setAllExpenses(JSON.parse(localData));
+        setIsLoading(false);
+      } catch (e) {
+        console.error('Error al parsear gastos locales, migrando del servidor', e);
+        fetchMigrate();
+      }
+    } else {
+      fetchMigrate();
+    }
+  }, [authChecked, isAuthenticated]);
+
+  const fetchMigrate = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/expenses?month=${month}`, { cache: 'no-store' });
+      const res = await fetch('/api/expenses', { cache: 'no-store' });
       const data = await res.json();
-      setExpenses(data);
+      setAllExpenses(data);
+      localStorage.setItem('rentflow_expenses', JSON.stringify(data));
     } catch (e) {
-      console.error('Failed to fetch expenses', e);
+      console.error('No se pudieron migrar los gastos del servidor', e);
     }
     setIsLoading(false);
   };
 
+  // Sincronizar los gastos del mes seleccionado
   useEffect(() => {
-    fetchExpenses(currentMonth);
-  }, [currentMonth]);
+    if (!authChecked || !isAuthenticated || isLoading) return;
+
+    let monthExpenses = allExpenses.filter(e => e.month === currentMonth);
+    
+    // Auto-generación de gastos fijos si el mes está vacío
+    if (monthExpenses.length === 0 && allExpenses.length > 0) {
+      const pastExpenses = allExpenses.filter(e => e.month < currentMonth).sort((a, b) => b.month.localeCompare(a.month));
+      if (pastExpenses.length > 0) {
+        const mostRecentMonth = pastExpenses[0].month;
+        const templateExpenses = pastExpenses.filter(e => e.month === mostRecentMonth);
+        
+        const newExpenses = templateExpenses.map((e, idx) => ({
+          ...e,
+          id: `${currentMonth}-auto-${idx}-${Date.now()}`,
+          month: currentMonth,
+          status: 'pending' as const,
+          receiptUrl: undefined
+        }));
+        
+        const updatedAll = [...allExpenses, ...newExpenses];
+        setAllExpenses(updatedAll);
+        localStorage.setItem('rentflow_expenses', JSON.stringify(updatedAll));
+        setExpenses(newExpenses);
+      } else {
+        setExpenses([]);
+      }
+    } else {
+      setExpenses(monthExpenses);
+    }
+  }, [currentMonth, allExpenses, authChecked, isAuthenticated, isLoading]);
 
   const totalPending = expenses.filter(p => p.status === 'pending').reduce((acc, curr) => acc + curr.amount, 0);
   const totalPaid = expenses.filter(p => p.status === 'paid').reduce((acc, curr) => acc + curr.amount, 0);
@@ -112,17 +154,14 @@ export default function Dashboard() {
   };
 
   // Handlers
-  const saveEditedExpense = async (updatedExpense: Expense) => {
-    setExpenses(prev => prev.map(p => p.id === updatedExpense.id ? updatedExpense : p));
-    await fetch('/api/expenses', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedExpense)
-    });
+  const saveEditedExpense = (updatedExpense: Expense) => {
+    const updated = allExpenses.map(p => p.id === updatedExpense.id ? updatedExpense : p);
+    setAllExpenses(updated);
+    localStorage.setItem('rentflow_expenses', JSON.stringify(updated));
     setExpenseToEdit(null);
   };
 
-  const handleLiquidate = async (totalAlquiler: number, inmoFee: number, expensasTotal: number, ownerDeduction: number) => {
+  const handleLiquidate = (totalAlquiler: number, inmoFee: number, expensasTotal: number, ownerDeduction: number) => {
     const rentExp = expenses.find(e => e.name.toLowerCase().includes('alquiler') && e.recipient.toLowerCase().includes('dueño') || e.recipient.toLowerCase().includes('fornasier'));
     const inmoExp = expenses.find(e => e.name.toLowerCase().includes('inmobiliaria'));
     const consorcioExp = expenses.find(e => e.name.toLowerCase().includes('expensas'));
@@ -135,22 +174,29 @@ export default function Dashboard() {
       rentNotes = `Descuento expensas: -$${ownerDeduction.toLocaleString('es-AR')}`;
     }
 
-    if (rentExp) {
-      await saveEditedExpense({ ...rentExp, amount: finalRent, notes: rentNotes });
-    }
-    if (inmoExp) {
-      await saveEditedExpense({ ...inmoExp, amount: inmoFee || 0 });
-    }
-    if (consorcioExp) {
-      await saveEditedExpense({ ...consorcioExp, amount: expensasTotal || 0 });
-    }
+    const updatedExpenses = allExpenses.map(e => {
+      if (rentExp && e.id === rentExp.id) {
+        return { ...e, amount: finalRent, notes: rentNotes };
+      }
+      if (inmoExp && e.id === inmoExp.id) {
+        return { ...e, amount: inmoFee || 0 };
+      }
+      if (consorcioExp && e.id === consorcioExp.id) {
+        return { ...e, amount: expensasTotal || 0 };
+      }
+      return e;
+    });
+
+    setAllExpenses(updatedExpenses);
+    localStorage.setItem('rentflow_expenses', JSON.stringify(updatedExpenses));
     setShowLiquidateModal(false);
   };
 
-  const deleteExpense = async (id: string) => {
+  const deleteExpense = (id: string) => {
     if (!confirm('¿Eliminar este gasto?')) return;
-    setExpenses(prev => prev.filter(e => e.id !== id));
-    await fetch(`/api/expenses?id=${id}`, { method: 'DELETE' });
+    const updated = allExpenses.filter(e => e.id !== id);
+    setAllExpenses(updated);
+    localStorage.setItem('rentflow_expenses', JSON.stringify(updated));
   };
 
   const copyAndOpenMP = async () => {
@@ -167,66 +213,45 @@ export default function Dashboard() {
     }
   };
 
-  const markAsPaid = async () => {
+  const markAsPaid = () => {
     if (selectedPayment) {
       const updatedPayment = { ...selectedPayment, status: 'paid' as const };
-      setExpenses(prev => prev.map(p => p.id === selectedPayment.id ? updatedPayment : p));
-      await fetch('/api/expenses', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedPayment)
-      });
+      const updated = allExpenses.map(p => p.id === selectedPayment.id ? updatedPayment : p);
+      setAllExpenses(updated);
+      localStorage.setItem('rentflow_expenses', JSON.stringify(updated));
       setSelectedPayment(null);
     }
   };
 
-  const toggleStatus = async (expense: Expense) => {
+  const toggleStatus = (expense: Expense) => {
     const newStatus: PaymentStatus = expense.status === 'paid' ? 'pending' : 'paid';
     const updatedExpense = { ...expense, status: newStatus };
-    
-    // Optimistic update
-    setExpenses(prev => prev.map(e => e.id === expense.id ? updatedExpense : e));
-    
-    try {
-      await fetch('/api/expenses', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedExpense)
-      });
-    } catch (e) {
-      console.error('Failed to update status', e);
-      // Revert on error
-      setExpenses(prev => prev.map(e => e.id === expense.id ? expense : e));
-    }
+    const updated = allExpenses.map(e => e.id === expense.id ? updatedExpense : e);
+    setAllExpenses(updated);
+    localStorage.setItem('rentflow_expenses', JSON.stringify(updated));
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, expenseId: string) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, expenseId: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploadingId(expenseId);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('expenseId', expenseId);
-
-    try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      
-      if (data.receiptUrl) {
-        setExpenses(prev => prev.map(p => p.id === expenseId ? { ...p, receiptUrl: data.receiptUrl } : p));
-      } else {
-        alert('Error: ' + (data.error || 'No se pudo subir el archivo'));
-      }
-    } catch (err: any) {
-      console.error('Upload failed', err);
-      alert('Error de conexión al subir el comprobante: ' + (err.message || 'Error desconocido'));
-    }
-    setUploadingId(null);
-    e.target.value = ''; // Reset input to allow uploading same file again
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      const updated = allExpenses.map(p => 
+        p.id === expenseId ? { ...p, receiptUrl: base64String } : p
+      );
+      setAllExpenses(updated);
+      localStorage.setItem('rentflow_expenses', JSON.stringify(updated));
+      setUploadingId(null);
+      e.target.value = ''; // Reset input to allow uploading same file again
+    };
+    reader.onerror = () => {
+      alert('Error al leer el archivo');
+      setUploadingId(null);
+    };
+    reader.readAsDataURL(file);
   };
 
   const formatMonth = (monthStr: string) => {
@@ -449,7 +474,9 @@ export default function Dashboard() {
             month={currentMonth}
             onClose={() => setShowAddModal(false)} 
             onAdd={(newExp) => {
-              setExpenses(prev => [...prev, newExp]);
+              const updated = [...allExpenses, newExp];
+              setAllExpenses(updated);
+              localStorage.setItem('rentflow_expenses', JSON.stringify(updated));
               setShowAddModal(false);
             }} 
           />
@@ -608,13 +635,21 @@ function AddExpenseModal({ onClose, onAdd, month }: { onClose: () => void, onAdd
   const [aliasCbu, setAliasCbu] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const newExp = { name, amount: parseFloat(amount), recipient, aliasCbu, type: 'Otro', month, dueDate: '', status: 'pending' as PaymentStatus };
-    const res = await fetch('/api/expenses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newExp) });
-    const data = await res.json();
-    onAdd(data);
+    const newExp = { 
+      id: Date.now().toString(),
+      name, 
+      amount: parseFloat(amount), 
+      recipient, 
+      aliasCbu, 
+      type: 'Otro', 
+      month, 
+      dueDate: '', 
+      status: 'pending' as PaymentStatus 
+    };
+    onAdd(newExp);
   };
 
   return (
